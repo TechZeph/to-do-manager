@@ -40,7 +40,7 @@ class TaskManager:
         """Prints the main menu options."""
         menu_options = {
             1: "Add a Task",
-            2: "View Tasks",
+            2: "View/Edit Tasks",
             3: "Mark Task as Complete",
             4: "Delete a Task",
             5: "Exit",
@@ -49,7 +49,7 @@ class TaskManager:
         for key, value in menu_options.items():
             print(f"{key} -- {value}")
 
-    def get_priority(self): #Error when calling this function, need to look into it.
+    def get_priority(self):
         """Prompts the user to select a priority level."""
         valid_priorities = ["High", "Medium", "Low"]
         while True:
@@ -64,8 +64,8 @@ class TaskManager:
         while True:
             task_description = input("Write a task to add to your list, then hit enter: ").strip()
             if task_description:
-                priority = self.get_priority() #get_priority function not working
-                task = {"Description": task_description, "Completed": False, "Priority": priority}, 
+                priority = self.get_priority()
+                task = {"Description": task_description, "Completed": False, "Priority": priority}
                 self.task_list.append(task)
                 self.save_tasks()
                 print(f'\nThe task "{task["Description"]}" has been added to your list.')
@@ -73,67 +73,68 @@ class TaskManager:
             else:
                 print("Task description cannot be empty. Please try again.")
 
-    def view_or_edit_task(self, pause=False, edit_mode=False):
+    def view_or_edit_tasks(self, pause=False, edit_mode=False):
         """Displays all tasks in the task list with option for editing tasks."""
         if self.is_task_list_empty():
             return
+
         print("\nYour Tasks:")
         for index, task in enumerate(self.task_list, start=1):
             status = "Yes" if task["Completed"] else "No"
             priority = task.get("Priority", "None")
             print(f'{index}. {task["Description"]}, Completed: {status}, Priority: {priority}')
+
         if edit_mode:
             while True:
                 try:
                     task_number = int(input("\nEnter the number of the task to edit, or 0 to return: "))
-                if task_number == 0:
-                    break
-                elif 1 <= task_number <= len(self.task_list):
-                    task_index = task_number - 1
-                    self.edit_task(task_index)
-                    break
-                else:
-                    print("Invalid number. Please enter a valid task number.")
-            except ValueError:
-                print("Invalid input. Please enter a valid number.")
-        if pause: #Only pauses if parameter is set to true
+                    if task_number == 0:
+                        break
+                    elif 1 <= task_number <= len(self.task_list):
+                        task_index = task_number - 1
+                        self.edit_task(task_index)
+                        break
+                    else:
+                        print("Invalid number. Please enter a valid task number.")
+                except ValueError:
+                    print("Invalid input. Please enter a valid number.")
+
+        if pause and not edit_mode:  # Only pauses if pause parameter is set to true
             input("\nPress Enter to return to the previous menu...")
 
+    def edit_task(self, task_index):
+        """Displays edit options for a selected task."""
+        task = self.task_list[task_index]
+        while True:
+            print(f'\nEditing Task: {task["Description"]}')
+            print("1 -- Edit Description")
+            print("2 -- Edit Priority")
+            print("3 -- Mark as Complete")
+            print("4 -- Return to Main Menu")
 
-def edit_task(self, task_index):
-    """Displays edit options for a selected task."""
-    task = self.task_list[task_index]
-    while True:
-        print(f'\nEditing Task: {task["Description"]}')
-        print("1 -- Edit Description")
-        print("2 -- Edit Priority")
-        print("3 -- Mark as Complete")
-        print("4 -- Return to Main Menu")
-
-        try:
-            choice = int(input("Enter your choice: "))
-            if choice == 1:
-                new_description = input("Enter the new description: ").strip()
-                if new_description:
-                    task["Description"] = new_description
-                    print("Task description updated.")
+            try:
+                choice = int(input("Enter your choice: "))
+                if choice == 1:
+                    new_description = input("Enter the new description: ").strip()
+                    if new_description:
+                        task["Description"] = new_description
+                        print("Task description updated.")
+                    else:
+                        print("Description cannot be empty.")
+                elif choice == 2:
+                    task["Priority"] = self.get_priority()
+                    print("Task priority updated.")
+                elif choice == 3:
+                    task["Completed"] = not task["Completed"]
+                    print(f'Task marked as {"complete" if task["Completed"] else "incomplete"}.')
+                elif choice == 4:
+                    break
                 else:
-                    print("Description cannot be empty.")
-            elif choice == 2:
-                task["Priority"] = self.get_priority()
-                print("Task priority updated.")
-            elif choice == 3:
-                task["Completed"] = not task["Completed"]
-                print(f'Task marked as {"complete" if task["Completed"] else "incomplete"}.')
-            elif choice == 4:
-                break
-            else:
-                print("Invalid choice. Please enter a number between 1 and 4.")
-            
-            self.save_tasks()
-        except ValueError:
-            print("Invalid input. Please enter a valid number.")
-        
+                    print("Invalid choice. Please enter a number between 1 and 4.")
+
+                self.save_tasks()
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
 
     def select_task(self, prompt):
         """Prompts the user to select a valid task number or cancel by entering 0."""
@@ -153,7 +154,7 @@ def edit_task(self, task_index):
         """Prompts the user to mark a task as complete."""
         if self.is_task_list_empty():
             return
-        self.view_tasks()
+        self.view_or_edit_tasks()
         task_number = self.select_task("Enter the number of the task you would like to mark as complete (0 to cancel): ")
         if task_number is not None:
             self.task_list[task_number]["Completed"] = True
@@ -166,7 +167,7 @@ def edit_task(self, task_index):
         """Prompts the user to delete a task."""
         if self.is_task_list_empty():
             return
-        self.view_tasks()
+        self.view_or_edit_tasks()
         task_number = self.select_task("Enter the number of the task you would like to delete (0 to cancel): ")
         if task_number is not None:
             deleted_task = self.task_list.pop(task_number)
@@ -189,7 +190,7 @@ def edit_task(self, task_index):
             if option == 1:
                 self.add_task()
             elif option == 2:
-                self.view_tasks(pause=True)
+                self.view_or_edit_tasks(pause=True, edit_mode=True)
             elif option == 3:
                 self.mark_task_complete()
             elif option == 4:
